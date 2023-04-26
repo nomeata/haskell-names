@@ -71,6 +71,27 @@ instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Decl l) where
           <| sc            -: l
           <| signatureV sc -: names
           <| sc            -: ty
+      PatSynSig l names a b d e f -> -- Incomplete wrt. bound type variables
+        c PatSynSig
+          <| sc            -: l
+          <| signatureV sc -: names
+          <| sc            -: a
+          <| sc            -: b
+          <| sc            -: d
+          <| sc            -: e
+          <| sc            -: f
+      SpecSig l a n ty ->
+        c SpecSig
+          <| sc            -: l
+          <| sc            -: a
+          <| exprV sc      -: n
+          <| sc            -: ty
+      InlineSig l a b n ->
+        c InlineSig
+          <| sc            -: l
+          <| sc            -: a
+          <| sc            -: b
+          <| exprV sc      -: n
       InfixDecl l assoc mp ops ->
         c InfixDecl
           <| sc       -: l
@@ -99,6 +120,33 @@ instanceHeadClass (IHApp _ instHead _) = instanceHeadClass instHead
 
 instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Type l) where
   rtraverse e sc = defaultRtraverse e (exprT sc)
+
+instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Promoted l) where
+  rtraverse e sc = case e of
+    PromotedCon l b n ->
+      c PromotedCon
+        <| sc -: l
+        <| sc -: b
+        <| exprV sc -: n
+    _ -> defaultRtraverse e sc
+
+instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (Annotation l) where
+  rtraverse e sc =
+    case e of
+      Ann l n e ->
+        c Ann
+          <| sc -: l
+          <| exprV sc -: n
+          <| exprV sc -: e
+      TypeAnn l n e ->
+        c TypeAnn
+          <| sc -: l
+          <| exprT sc -: n
+          <| exprV sc -: e
+      ModuleAnn l e ->
+        c ModuleAnn
+          <| sc -: l
+          <| exprV sc -: e
 
 instance (Resolvable l, SrcInfo l, D.Data l) => Resolvable (DeclHead l) where
   rtraverse e sc =
